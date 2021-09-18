@@ -7,9 +7,11 @@ import redis.clients.jedis.*;
 import static org.assertj.core.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class TwoWayRedisMapTest {
+class TwoWayRedisMapPT {
 
 	private Jedis jedis;
+
+	private static final int COUNT = 1000;
 
 	@BeforeAll
 	public void setUp() {
@@ -17,8 +19,13 @@ class TwoWayRedisMapTest {
 	}
 
 	@Test
-	void testTwoWayRedisMap() {
-		var map = new TwoWayRedisMap(jedis);
+	void perfTestTwoWayRedisMap() {
+		for (int i = 0; i < COUNT; i++)
+			testTwoWayRedisMap();
+	}
+
+	private void testTwoWayRedisMap() {
+		var map = new PipedTwoWayRedisMap(jedis);
 		map.put("A", "1", "2");
 		map.put("B", "1", "2", "3");
 		map.put("C", "1", "2", "3", "4");

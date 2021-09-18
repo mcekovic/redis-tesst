@@ -4,11 +4,11 @@ import java.util.*;
 
 import redis.clients.jedis.*;
 
-public class TwoWayRedisMap {
+public class PipedTwoWayRedisMap {
 
 	private final Jedis jedis;
 
-	public TwoWayRedisMap(Jedis Jedis) {
+	public PipedTwoWayRedisMap(Jedis Jedis) {
 		this.jedis = Jedis;
 	}
 
@@ -21,25 +21,31 @@ public class TwoWayRedisMap {
 	}
 
 	public void put(String key1, String... keys2) {
-		jedis.sadd(redisKey1(key1), keys2);
+		var pipeline = jedis.pipelined();
+		pipeline.sadd(redisKey1(key1), keys2);
 		for (var key2 : keys2)
-			jedis.sadd(redisKey2(key2), key1);
+			pipeline.sadd(redisKey2(key2), key1);
+		pipeline.sync();
 	}
 
 	public void remove1(String key1) {
 		var redisKey1 = redisKey1(key1);
 		var keys2 = jedis.smembers(redisKey1);
+		var pipeline = jedis.pipelined();
 		for (var key2 : keys2)
-			jedis.srem(redisKey2(key2), key1);
-		jedis.del(redisKey1);
+			pipeline.srem(redisKey2(key2), key1);
+		pipeline.del(redisKey1);
+		pipeline.sync();
 	}
 
 	public void remove2(String key2) {
 		var redisKey2 = redisKey2(key2);
 		var keys1 = jedis.smembers(redisKey2);
+		var pipeline = jedis.pipelined();
 		for (var key1 : keys1)
-			jedis.srem(redisKey1(key1), key2);
-		jedis.del(redisKey2);
+			pipeline.srem(redisKey1(key1), key2);
+		pipeline.del(redisKey2);
+		pipeline.sync();
 	}
 
 	private String redisKey1(String key1) {

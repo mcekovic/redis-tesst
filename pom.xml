@@ -15,7 +15,8 @@
 	<description>test-redis</description>
 
 	<properties>
-		<java.version>16</java.version>
+		<java.version>17</java.version>
+		<jedis.version>3.7.0</jedis.version>
 		<testcontainers.version>1.16.0</testcontainers.version>
 	</properties>
 
@@ -32,6 +33,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>redis.clients</groupId>
+			<artifactId>jedis</artifactId>
+			<version>${jedis.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>

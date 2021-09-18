@@ -1,7 +1,5 @@
 package org.strangeforest.test.redis;
 
-import java.util.*;
-
 import org.junit.jupiter.api.extension.*;
 import org.testcontainers.containers.*;
 
