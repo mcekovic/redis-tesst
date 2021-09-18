@@ -1,11 +1,18 @@
 package org.strangeforest.test.redis;
 
+import java.time.*;
 import java.util.*;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.*;
+import org.testcontainers.shaded.org.awaitility.*;
 
 import redis.clients.jedis.*;
 import redis.clients.jedis.params.*;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.strangeforest.test.redis.GlobalEntryID.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class RedisDataTypesTest {
@@ -28,24 +35,32 @@ public class RedisDataTypesTest {
 	void testStream() {
 		jedis.xtrim("user-stream/1", 0L, false);
 
-		jedis.xadd("user-stream/1", Map.of("name", "Pera", "age", "30"), XAddParams.xAddParams());
+		jedis.xadd("user-stream/1", NEW_ENTRY, Map.of("name", "Pera", "age", "30"));
+		jedis.xadd("user-stream/1", NEW_ENTRY, Map.of("name", "Zika", "age", "40"));
 
-		System.out.println(jedis.xrange("user-stream/1", FIRST_ENTRY, LAST_ENTRY));
+		var streamInfo = jedis.xinfoStream("user-stream/1");
+		System.out.println(streamInfo.getLength());
+		System.out.println(streamInfo.getFirstEntry());
+		System.out.println(streamInfo.getLastEntry());
 
-		System.out.println(jedis.xinfoStream("user-stream/1").getFirstEntry());
-		System.out.println(jedis.xinfoStream("user-stream/1").getLastEntry());
-		System.out.println(jedis.xinfoStream("user-stream/1").getLength());
+		System.out.println(jedis.xrange("user-stream/1", MIN_ENTRY, MAX_ENTRY));
+
+		assertThat(jedis.xread(1, 200L, Map.entry("user-stream/1", LAST_ENTRY))).isEmpty();
+
+		new Thread(() -> {
+			try {
+				Thread.sleep(200L);
+			}
+			catch (InterruptedException ignored) {}
+
+			new Jedis("localhost", 6379)
+				.xadd("user-stream/1", NEW_ENTRY, Map.of("name", "Mika", "age", "50"));
+		}).start();
+
+		await().atMost(Duration.ofMillis(1000L)).until(() -> {
+			var entries = jedis.xread(1, 1000L, Map.entry("user-stream/1", LAST_ENTRY));
+			System.out.println(entries);
+			return !entries.isEmpty();
+		});
 	}
-
-	public static final StreamEntryID FIRST_ENTRY = new StreamEntryID() {
-		public String toString() {
-			return "-";
-		}
-	};
-
-	public static final StreamEntryID LAST_ENTRY = new StreamEntryID() {
-		public String toString() {
-			return "+";
-		}
-	};
 }
