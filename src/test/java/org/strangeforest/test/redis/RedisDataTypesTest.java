@@ -3,12 +3,8 @@ package org.strangeforest.test.redis;
 import java.time.*;
 import java.util.*;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.*;
-import org.testcontainers.shaded.org.awaitility.*;
-
 import redis.clients.jedis.*;
-import redis.clients.jedis.params.*;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.strangeforest.test.redis.GlobalEntryID.*;

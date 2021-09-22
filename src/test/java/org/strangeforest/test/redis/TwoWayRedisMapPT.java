@@ -1,7 +1,11 @@
 package org.strangeforest.test.redis;
 
+import java.util.stream.*;
+
 import org.junit.jupiter.api.*;
 
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 import redis.clients.jedis.*;
 
 import static org.assertj.core.api.Assertions.*;
@@ -18,14 +22,14 @@ class TwoWayRedisMapPT {
 		jedis = new Jedis("localhost", 6379);
 	}
 
-	@Test
-	void perfTestTwoWayRedisMap() {
+	@ParameterizedTest
+	@MethodSource("redisTwoWayMapSource")
+	void perfTestRedisTwoWayMap(TwoWayMap map) {
 		for (int i = 0; i < COUNT; i++)
-			testTwoWayRedisMap();
+			testRedisTwoWayMap(map);
 	}
 
-	private void testTwoWayRedisMap() {
-		var map = new PipedTwoWayRedisMap(jedis);
+	private void testRedisTwoWayMap(TwoWayMap map) {
 		map.put("A", "1", "2");
 		map.put("B", "1", "2", "3");
 		map.put("C", "1", "2", "3", "4");
@@ -40,5 +44,13 @@ class TwoWayRedisMapPT {
 		assertThat(map.get2("2")).isEmpty();
 		assertThat(map.get2("3")).containsExactlyInAnyOrder("C");
 		assertThat(map.get2("4")).containsExactlyInAnyOrder("C");
+	}
+
+	private Stream<Arguments> redisTwoWayMapSource() {
+		return Stream.of(
+				Arguments.of(new RedisTwoWayMap(jedis)),
+				Arguments.of(new PipedRedisTwoWayMap(jedis)),
+				Arguments.of(new TxRedisTwoWayMap(jedis))
+		);
 	}
 }
