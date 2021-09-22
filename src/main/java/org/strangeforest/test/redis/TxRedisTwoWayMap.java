@@ -29,22 +29,26 @@ public class TxRedisTwoWayMap implements TwoWayMap {
 	}
 
 	@Override public void remove1(String key1) {
+		var pipeline = jedis.pipelined();
 		var redisKey1 = redisKey1(key1);
-		jedis.watch(redisKey1);
-		var keys2 = jedis.smembers(redisKey1);
+		pipeline.watch(redisKey1);
+		var keys2 = pipeline.smembers(redisKey1);
+		pipeline.sync();
 		var tx = jedis.multi();
-		for (var key2 : keys2)
+		for (var key2 : keys2.get())
 			tx.srem(redisKey2(key2), key1);
 		tx.del(redisKey1);
 		tx.exec();
 	}
 
 	@Override public void remove2(String key2) {
+		var pipeline = jedis.pipelined();
 		var redisKey2 = redisKey2(key2);
-		jedis.watch(redisKey2);
-		var keys1 = jedis.smembers(redisKey2);
+		pipeline.watch(redisKey2);
+		var keys1 = pipeline.smembers(redisKey2);
+		pipeline.sync();
 		var tx = jedis.multi();
-		for (var key1 : keys1)
+		for (var key1 : keys1.get())
 			tx.srem(redisKey1(key1), key2);
 		tx.del(redisKey2);
 		tx.exec();
